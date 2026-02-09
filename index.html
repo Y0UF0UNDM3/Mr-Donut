@@ -219,39 +219,13 @@
       background: #a63636;
     }
 
-    /* Freeplay canvas styling */
-    #freeplayCanvas {
-      background: #222233;
-      border: 2px solid #444466;
-      border-radius: 8px;
-      margin-top: 20px;
-      cursor: crosshair;
-      max-width: 100%;
-      height: 480px;
-      display: block;
-    }
-
+    /* Freeplay score */
     #freeplayScore {
-      font-size: 1.4rem;
-      margin-top: 10px;
-      color: #eee;
-    }
-
-    #freeplayExitBtn {
-      margin-top: 20px;
-      background: #aa4444;
-      border: none;
-      padding: 12px 28px;
-      border-radius: 8px;
-      color: white;
-      font-weight: 700;
-      font-size: 1.1rem;
-      cursor: pointer;
+      margin-top: 15px;
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #4a90e2;
       user-select: none;
-      transition: background-color 0.3s;
-    }
-    #freeplayExitBtn:hover {
-      background: #cc5555;
     }
   </style>
 </head>
@@ -259,7 +233,6 @@
   <div id="app" role="main">
     <nav aria-label="Main menu">
       <button id="nav-play" class="active" tabindex="0">PLAY</button>
-      <button id="nav-freeplay" tabindex="0">FREEPLAY</button> <!-- Added Freeplay button -->
       <button id="nav-online" tabindex="0">ONLINE</button>
       <button id="nav-customize" tabindex="0">CUSTOMIZE</button>
       <button id="nav-settings" tabindex="0">SETTINGS</button>
@@ -280,7 +253,6 @@
   <script>
     const navButtons = {
       play: document.getElementById('nav-play'),
-      freeplay: document.getElementById('nav-freeplay'), // Freeplay button
       online: document.getElementById('nav-online'),
       customize: document.getElementById('nav-customize'),
       settings: document.getElementById('nav-settings'),
@@ -297,11 +269,6 @@
     // Keep track if searching for match
     let isMatchmaking = false;
 
-    // Freeplay state
-    let freeplayTargets = [];
-    let freeplayScore = 0;
-    let freeplayAnimationId = null;
-
     // Clear active state from nav buttons
     function clearActive() {
       Object.values(navButtons).forEach(btn => btn.classList.remove('active'));
@@ -314,7 +281,6 @@
       isMatchmaking = false;
       navStack = [];
       clearActive();
-      navButtons.play.classList.add('active');
       mainContent.innerHTML = `<h2>Welcome to Arena Strike</h2>
         <p>Select an option from the left to get started.</p>`;
     }
@@ -346,6 +312,10 @@
             <h3>Custom Match</h3>
             <p>Create or join custom games with friends.</p>
           </div>
+          <div class="card" tabindex="0" data-mode="freeplay">
+            <h3>Freeplay</h3>
+            <p>Practice shooting targets offline and improve your aim.</p>
+          </div>
         </div>
       `;
 
@@ -354,7 +324,11 @@
         card.addEventListener('click', () => {
           const mode = card.dataset.mode;
           navStack.push('play');
-          renderPlayModeDetail(mode);
+          if (mode === 'freeplay') {
+            renderFreeplayMode();
+          } else {
+            renderPlayModeDetail(mode);
+          }
         });
         card.addEventListener('keydown', e => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -370,9 +344,6 @@
       backButton.style.display = 'block';
       matchmakingOverlay.classList.remove('visible');
       isMatchmaking = false;
-      clearActive();
-
-      navButtons.play.classList.add('active');
 
       let title = '';
       let desc = '';
@@ -434,7 +405,6 @@
       isMatchmaking = false;
       clearActive();
       navButtons.online.classList.add('active');
-
       mainContent.innerHTML = `
         <h2>Online</h2>
         <p>Matchmaking and lobby options coming soon.</p>
@@ -448,7 +418,6 @@
       isMatchmaking = false;
       clearActive();
       navButtons.customize.classList.add('active');
-
       mainContent.innerHTML = `
         <h2>Customize</h2>
         <p>Character and loadout customization coming soon.</p>
@@ -462,7 +431,6 @@
       isMatchmaking = false;
       clearActive();
       navButtons.settings.classList.add('active');
-
       mainContent.innerHTML = `
         <h2>Settings</h2>
         <p>Audio, video, and controls settings coming soon.</p>
@@ -484,19 +452,10 @@
         stopMatchmaking();
       }
 
-      // If switching away from Freeplay, cancel Freeplay loop
-      if (key !== 'freeplay') {
-        stopFreeplay();
-      }
-
       switch(key) {
         case 'play':
           navStack = [];
           renderPlayMenu();
-          break;
-        case 'freeplay':
-          navStack = [];
-          renderFreeplayMode();
           break;
         case 'online':
           navStack = [];
@@ -535,8 +494,6 @@
           clearActive();
         }
       }
-
-      stopFreeplay();
     };
 
     // Keyboard ESC to back out
@@ -549,4 +506,165 @@
     // Start matchmaking UI
     function startMatchmaking(mode) {
       isMatchmaking = true;
-     
+      matchmakingOverlay.classList.add('visible');
+      backButton.style.display = 'none';
+
+      // Simulate matchmaking for demo (auto stop after 8 seconds)
+      // In real game, you’d hook this to your backend
+      setTimeout(() => {
+        if (isMatchmaking) {
+          alert(`Match found in ${mode} mode! (not really, demo only)`);
+          stopMatchmaking();
+          // You could transition to game start here
+        }
+      }, 8000);
+    }
+
+    // Stop matchmaking UI
+    function stopMatchmaking() {
+      isMatchmaking = false;
+      matchmakingOverlay.classList.remove('visible');
+      backButton.style.display = 'block';
+      // Return to the last submenu, usually play mode list or detail
+      if (navStack.length > 0 && navStack[navStack.length -1] === 'play') {
+        renderPlayMenu();
+      } else {
+        renderMainMenu();
+        clearActive();
+      }
+    }
+
+    cancelMatchmakingBtn.onclick = stopMatchmaking;
+
+    // Setup nav button event listeners
+    Object.entries(navButtons).forEach(([key, btn]) => {
+      btn.onclick = () => onNavClick(key);
+    });
+
+    // --- Freeplay Mode Implementation ---
+
+    let freeplayTargets = [];
+    let freeplayScore = 0;
+    let freeplayAnimationId = null;
+
+    // Render Freeplay Mode UI
+    function renderFreeplayMode() {
+      backButton.style.display = 'block';
+      matchmakingOverlay.classList.remove('visible');
+      isMatchmaking = false;
+
+      mainContent.innerHTML = `
+        <h2>Freeplay Mode</h2>
+        <canvas id="freeplayCanvas" width="800" height="480" aria-label="Freeplay shooting range"></canvas>
+        <div id="freeplayScore">Score: 0</div>
+        <button id="freeplayExitBtn" style="
+          margin-top: 30px; padding: 12px 28px; font-size: 1.1rem; background:#d94f4f; color:#fff; border:none; border-radius: 8px; cursor:pointer;
+        ">Exit Freeplay</button>
+      `;
+
+      setupFreeplay();
+
+      document.getElementById('freeplayExitBtn').onclick = () => {
+        stopFreeplay();
+        renderPlayMenu();
+      };
+    }
+
+    // Setup Freeplay gameplay loop and targets
+    function setupFreeplay() {
+      const canvas = document.getElementById('freeplayCanvas');
+      const ctx = canvas.getContext('2d');
+
+      freeplayTargets = [];
+      freeplayScore = 0;
+      updateFreeplayScore();
+
+      // Generate 8 targets randomly spaced horizontally
+      for (let i = 0; i < 8; i++) {
+        freeplayTargets.push({
+          x: 70 + i * 90,
+          y: 200 + Math.random() * 100,
+          radius: 25,
+          hit: false
+        });
+      }
+
+      // Draw loop
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        freeplayTargets.forEach(target => {
+          if (!target.hit) {
+            // Outer circle
+            ctx.beginPath();
+            ctx.fillStyle = '#4a90e2';
+            ctx.shadowColor = '#4a90e2';
+            ctx.shadowBlur = 10;
+            ctx.arc(target.x, target.y, target.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Inner dark circle
+            ctx.beginPath();
+            ctx.fillStyle = '#1e1e1e';
+            ctx.arc(target.x, target.y, target.radius * 0.6, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        });
+
+        freeplayAnimationId = requestAnimationFrame(draw);
+      }
+
+      draw();
+
+      // Click handler for shooting
+      canvas.onclick = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const clickY = e.clientY - rect.top;
+
+        freeplayTargets.forEach(target => {
+          if (!target.hit) {
+            const dist = Math.hypot(target.x - clickX, target.y - clickY);
+            if (dist <= target.radius) {
+              target.hit = true;
+              freeplayScore++;
+              updateFreeplayScore();
+            }
+          }
+        });
+
+        // Reset targets if all hit after 2 seconds
+        if (freeplayTargets.every(t => t.hit)) {
+          setTimeout(() => {
+            freeplayTargets.forEach(t => t.hit = false);
+            freeplayScore = 0;
+            updateFreeplayScore();
+          }, 2000);
+        }
+      };
+    }
+
+    // Update score display
+    function updateFreeplayScore() {
+      const scoreEl = document.getElementById('freeplayScore');
+      if (scoreEl) scoreEl.textContent = `Score: ${freeplayScore}`;
+    }
+
+    // Stop freeplay animation and cleanup
+    function stopFreeplay() {
+      if (freeplayAnimationId) {
+        cancelAnimationFrame(freeplayAnimationId);
+        freeplayAnimationId = null;
+      }
+      const canvas = document.getElementById('freeplayCanvas');
+      if (canvas) {
+        canvas.onclick = null;
+      }
+    }
+
+    // Initial load
+    renderMainMenu();
+
+  </script>
+</body>
+</html>
