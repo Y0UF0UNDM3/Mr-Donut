@@ -218,12 +218,48 @@
     #matchmakingOverlay button:hover {
       background: #a63636;
     }
+
+    /* Freeplay canvas styling */
+    #freeplayCanvas {
+      background: #222233;
+      border: 2px solid #444466;
+      border-radius: 8px;
+      margin-top: 20px;
+      cursor: crosshair;
+      max-width: 100%;
+      height: 480px;
+      display: block;
+    }
+
+    #freeplayScore {
+      font-size: 1.4rem;
+      margin-top: 10px;
+      color: #eee;
+    }
+
+    #freeplayExitBtn {
+      margin-top: 20px;
+      background: #aa4444;
+      border: none;
+      padding: 12px 28px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 700;
+      font-size: 1.1rem;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.3s;
+    }
+    #freeplayExitBtn:hover {
+      background: #cc5555;
+    }
   </style>
 </head>
 <body>
   <div id="app" role="main">
     <nav aria-label="Main menu">
       <button id="nav-play" class="active" tabindex="0">PLAY</button>
+      <button id="nav-freeplay" tabindex="0">FREEPLAY</button> <!-- Added Freeplay button -->
       <button id="nav-online" tabindex="0">ONLINE</button>
       <button id="nav-customize" tabindex="0">CUSTOMIZE</button>
       <button id="nav-settings" tabindex="0">SETTINGS</button>
@@ -244,6 +280,7 @@
   <script>
     const navButtons = {
       play: document.getElementById('nav-play'),
+      freeplay: document.getElementById('nav-freeplay'), // Freeplay button
       online: document.getElementById('nav-online'),
       customize: document.getElementById('nav-customize'),
       settings: document.getElementById('nav-settings'),
@@ -260,6 +297,11 @@
     // Keep track if searching for match
     let isMatchmaking = false;
 
+    // Freeplay state
+    let freeplayTargets = [];
+    let freeplayScore = 0;
+    let freeplayAnimationId = null;
+
     // Clear active state from nav buttons
     function clearActive() {
       Object.values(navButtons).forEach(btn => btn.classList.remove('active'));
@@ -271,6 +313,8 @@
       matchmakingOverlay.classList.remove('visible');
       isMatchmaking = false;
       navStack = [];
+      clearActive();
+      navButtons.play.classList.add('active');
       mainContent.innerHTML = `<h2>Welcome to Arena Strike</h2>
         <p>Select an option from the left to get started.</p>`;
     }
@@ -280,6 +324,9 @@
       backButton.style.display = 'block';
       matchmakingOverlay.classList.remove('visible');
       isMatchmaking = false;
+      clearActive();
+      navButtons.play.classList.add('active');
+
       mainContent.innerHTML = `
         <h2>Play Modes</h2>
         <div class="submenu-cards">
@@ -323,6 +370,9 @@
       backButton.style.display = 'block';
       matchmakingOverlay.classList.remove('visible');
       isMatchmaking = false;
+      clearActive();
+
+      navButtons.play.classList.add('active');
 
       let title = '';
       let desc = '';
@@ -382,6 +432,9 @@
       backButton.style.display = 'block';
       matchmakingOverlay.classList.remove('visible');
       isMatchmaking = false;
+      clearActive();
+      navButtons.online.classList.add('active');
+
       mainContent.innerHTML = `
         <h2>Online</h2>
         <p>Matchmaking and lobby options coming soon.</p>
@@ -393,6 +446,9 @@
       backButton.style.display = 'block';
       matchmakingOverlay.classList.remove('visible');
       isMatchmaking = false;
+      clearActive();
+      navButtons.customize.classList.add('active');
+
       mainContent.innerHTML = `
         <h2>Customize</h2>
         <p>Character and loadout customization coming soon.</p>
@@ -404,6 +460,9 @@
       backButton.style.display = 'block';
       matchmakingOverlay.classList.remove('visible');
       isMatchmaking = false;
+      clearActive();
+      navButtons.settings.classList.add('active');
+
       mainContent.innerHTML = `
         <h2>Settings</h2>
         <p>Audio, video, and controls settings coming soon.</p>
@@ -425,10 +484,19 @@
         stopMatchmaking();
       }
 
+      // If switching away from Freeplay, cancel Freeplay loop
+      if (key !== 'freeplay') {
+        stopFreeplay();
+      }
+
       switch(key) {
         case 'play':
           navStack = [];
           renderPlayMenu();
+          break;
+        case 'freeplay':
+          navStack = [];
+          renderFreeplayMode();
           break;
         case 'online':
           navStack = [];
@@ -467,6 +535,8 @@
           clearActive();
         }
       }
+
+      stopFreeplay();
     };
 
     // Keyboard ESC to back out
@@ -479,43 +549,4 @@
     // Start matchmaking UI
     function startMatchmaking(mode) {
       isMatchmaking = true;
-      matchmakingOverlay.classList.add('visible');
-      backButton.style.display = 'none';
-
-      // Simulate matchmaking for demo (auto stop after 8 seconds)
-      // In real game, you’d hook this to your backend
-      setTimeout(() => {
-        if (isMatchmaking) {
-          alert(`Match found in ${mode} mode! (not really, demo only)`);
-          stopMatchmaking();
-          // You could transition to game start here
-        }
-      }, 8000);
-    }
-
-    // Stop matchmaking UI
-    function stopMatchmaking() {
-      isMatchmaking = false;
-      matchmakingOverlay.classList.remove('visible');
-      backButton.style.display = 'block';
-      // Return to the last submenu, usually play mode list or detail
-      if (navStack.length > 0 && navStack[navStack.length -1] === 'play') {
-        renderPlayMenu();
-      } else {
-        renderMainMenu();
-        clearActive();
-      }
-    }
-
-    cancelMatchmakingBtn.onclick = stopMatchmaking;
-
-    // Setup nav button event listeners
-    Object.entries(navButtons).forEach(([key, btn]) => {
-      btn.addEventListener('click', () => onNavClick(key));
-    });
-
-    // Initialize with welcome screen
-    renderMainMenu();
-  </script>
-</body>
-</html>
+     
