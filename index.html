@@ -5,13 +5,17 @@
   <title>Mini FPS Shooter</title>
   <style>
     body { margin: 0; overflow: hidden; background: black; font-family: sans-serif; }
+
     #hud {
       position: fixed;
       top: 10px;
       left: 10px;
       color: white;
       font-size: 18px;
+      display: none;
+      z-index: 5;
     }
+
     #crosshair {
       position: fixed;
       left: 50%;
@@ -20,24 +24,79 @@
       color: white;
       font-size: 24px;
       pointer-events: none;
+      display: none;
+      z-index: 5;
     }
-    #start {
+
+    /* Rocket-League-style menu */
+    #menu {
       position: fixed;
       inset: 0;
+      background: radial-gradient(circle at center, #1b2a4a, #05070f);
       display: flex;
-      align-items: center;
+      flex-direction: column;
       justify-content: center;
+      align-items: center;
       color: white;
-      background: rgba(0,0,0,0.8);
+      z-index: 10;
+    }
+
+    #menu h1 {
+      font-size: 56px;
+      letter-spacing: 3px;
+      margin-bottom: 40px;
+      text-shadow: 0 0 20px rgba(0,150,255,0.6);
+    }
+
+    .menu-btn {
+      width: 260px;
+      padding: 16px;
+      margin: 12px;
+      font-size: 20px;
+      border: none;
+      border-radius: 12px;
       cursor: pointer;
-      font-size: 28px;
+      color: white;
+      background: linear-gradient(90deg, #0aa0ff, #0044ff);
+      box-shadow: 0 0 18px rgba(0,140,255,0.5);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .menu-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 28px rgba(0,180,255,0.9);
+    }
+
+    #pauseMenu {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9;
     }
   </style>
 </head>
 <body>
+
 <div id="hud">Score: <span id="score">0</span></div>
 <div id="crosshair">+</div>
-<div id="start">Click to Start</div>
+
+<!-- Main Menu -->
+<div id="menu">
+  <h1>ARENA STRIKE</h1>
+  <button class="menu-btn" id="playBtn">PLAY</button>
+  <button class="menu-btn" id="settingsBtn">SETTINGS</button>
+  <button class="menu-btn" id="aboutBtn">ABOUT</button>
+</div>
+
+<!-- Pause Menu -->
+<div id="pauseMenu">
+  <button class="menu-btn" id="resumeBtn">RESUME</button>
+  <button class="menu-btn" id="quitBtn">QUIT TO MENU</button>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/PointerLockControls.js"></script>
@@ -45,8 +104,8 @@
 <script>
 let scene, camera, renderer, controls;
 let enemies = [];
-let bullets = [];
 let score = 0;
+let gameStarted = false;
 
 init();
 animate();
@@ -62,11 +121,6 @@ function init() {
   document.body.appendChild(renderer.domElement);
 
   controls = new THREE.PointerLockControls(camera, document.body);
-
-  document.getElementById('start').onclick = () => controls.lock();
-  controls.addEventListener('lock', () => start.style.display = 'none');
-  controls.addEventListener('unlock', () => start.style.display = 'flex');
-
   scene.add(controls.getObject());
 
   const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
@@ -80,8 +134,41 @@ function init() {
 
   spawnEnemies(15);
 
+  // MENU BUTTONS
+  playBtn.onclick = () => startGame();
+  resumeBtn.onclick = () => controls.lock();
+  quitBtn.onclick = () => quitToMenu();
+
+  settingsBtn.onclick = () => alert("Settings coming soon 👀");
+  aboutBtn.onclick = () => alert("Mini FPS Shooter — GitHub Starter Project");
+
+  controls.addEventListener('lock', () => {
+    pauseMenu.style.display = 'none';
+  });
+
+  controls.addEventListener('unlock', () => {
+    if (gameStarted) pauseMenu.style.display = 'flex';
+  });
+
   window.addEventListener('resize', onResize);
   window.addEventListener('click', shoot);
+}
+
+function startGame() {
+  gameStarted = true;
+  menu.style.display = 'none';
+  hud.style.display = 'block';
+  crosshair.style.display = 'block';
+  controls.lock();
+}
+
+function quitToMenu() {
+  controls.unlock();
+  pauseMenu.style.display = 'none';
+  menu.style.display = 'flex';
+  hud.style.display = 'none';
+  crosshair.style.display = 'none';
+  gameStarted = false;
 }
 
 function spawnEnemies(n) {
@@ -110,7 +197,7 @@ function shoot() {
     scene.remove(hit);
     enemies = enemies.filter(e => e !== hit);
     score++;
-    document.getElementById('score').textContent = score;
+    scoreEl.textContent = score;
   }
 }
 
@@ -131,6 +218,9 @@ function onResize(){
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
+
+// DOM refs after load
+const scoreEl = document.getElementById('score');
 </script>
 </body>
 </html>
