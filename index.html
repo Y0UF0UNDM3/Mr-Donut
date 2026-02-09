@@ -1,226 +1,394 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Mini FPS Shooter</title>
-  <style>
-    body { margin: 0; overflow: hidden; background: black; font-family: sans-serif; }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Arena Strike — Main Menu</title>
+<style>
+  /* Reset */
+  * {
+    box-sizing: border-box;
+  }
+  body, html {
+    margin: 0; padding: 0;
+    height: 100%;
+    background: #121212;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #ddd;
+    display: flex;
+    overflow: hidden;
+  }
 
-    #hud {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      color: white;
-      font-size: 18px;
-      display: none;
-      z-index: 5;
-    }
+  /* Container: full screen flex */
+  #app {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+  }
 
-    #crosshair {
-      position: fixed;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-      color: white;
-      font-size: 24px;
-      pointer-events: none;
-      display: none;
-      z-index: 5;
-    }
+  /* Left Nav */
+  nav {
+    width: 220px;
+    background: #1e1e1e;
+    display: flex;
+    flex-direction: column;
+    padding-top: 40px;
+    box-shadow: inset -3px 0 8px rgba(0,0,0,0.6);
+  }
 
-    /* Rocket-League-style menu */
-    #menu {
-      position: fixed;
-      inset: 0;
-      background: radial-gradient(circle at center, #1b2a4a, #05070f);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      color: white;
-      z-index: 10;
-    }
+  nav button {
+    background: none;
+    border: none;
+    color: #ccc;
+    font-size: 18px;
+    padding: 18px 24px;
+    text-align: left;
+    cursor: pointer;
+    position: relative;
+    transition: background-color 0.3s, color 0.3s;
+    user-select: none;
+    font-weight: 600;
+  }
+  nav button:not(:last-child) {
+    margin-bottom: 10px;
+  }
+  nav button:hover,
+  nav button:focus {
+    background-color: #2a2a2a;
+    outline: none;
+    color: #eee;
+  }
+  nav button.active {
+    color: #eee;
+    background-color: #292929;
+  }
+  nav button.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 6px;
+    bottom: 6px;
+    width: 5px;
+    background-color: #4a90e2; /* subtle blue accent */
+    border-radius: 3px 0 0 3px;
+  }
 
-    #menu h1 {
-      font-size: 56px;
-      letter-spacing: 3px;
-      margin-bottom: 40px;
-      text-shadow: 0 0 20px rgba(0,150,255,0.6);
-    }
+  /* Main content */
+  main {
+    flex: 1;
+    background: #181818;
+    padding: 40px 60px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
 
-    .menu-btn {
-      width: 260px;
-      padding: 16px;
-      margin: 12px;
-      font-size: 20px;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      color: white;
-      background: linear-gradient(90deg, #0aa0ff, #0044ff);
-      box-shadow: 0 0 18px rgba(0,140,255,0.5);
-      transition: transform 0.15s, box-shadow 0.15s;
-    }
+  /* Section Title */
+  main h2 {
+    margin-top: 0;
+    font-weight: 700;
+    font-size: 2.2rem;
+    margin-bottom: 16px;
+  }
 
-    .menu-btn:hover {
-      transform: scale(1.05);
-      box-shadow: 0 0 28px rgba(0,180,255,0.9);
-    }
+  /* Submenu cards container */
+  .submenu-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill,minmax(200px,1fr));
+    gap: 20px;
+    margin-top: 10px;
+  }
 
-    #pauseMenu {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.75);
-      display: none;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 9;
-    }
-  </style>
+  /* Each submenu card */
+  .card {
+    background: #252525;
+    border-radius: 8px;
+    padding: 24px;
+    cursor: pointer;
+    box-shadow: 0 0 8px rgba(0,0,0,0.7);
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
+    display: flex;
+    flex-direction: column;
+  }
+  .card:hover {
+    box-shadow: 0 0 15px rgba(74, 144, 226, 0.8);
+    transform: translateY(-4px);
+  }
+  .card h3 {
+    margin: 0 0 8px 0;
+    font-weight: 600;
+    font-size: 1.3rem;
+  }
+  .card p {
+    margin: 0;
+    color: #aaa;
+    font-size: 0.95rem;
+    flex-grow: 1;
+  }
+
+  /* Back button */
+  #backButton {
+    margin-top: auto;
+    align-self: flex-start;
+    background: #4a90e2;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 6px;
+    color: white;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    user-select: none;
+    display: none; /* hidden by default */
+    transition: background-color 0.3s;
+  }
+  #backButton:hover {
+    background: #357abd;
+  }
+
+  /* Scrollbar styling for main */
+  main::-webkit-scrollbar {
+    width: 8px;
+  }
+  main::-webkit-scrollbar-track {
+    background: #181818;
+  }
+  main::-webkit-scrollbar-thumb {
+    background-color: #444;
+    border-radius: 4px;
+  }
+</style>
 </head>
 <body>
-
-<div id="hud">Score: <span id="score">0</span></div>
-<div id="crosshair">+</div>
-
-<!-- Main Menu -->
-<div id="menu">
-  <h1>ARENA STRIKE</h1>
-  <button class="menu-btn" id="playBtn">PLAY</button>
-  <button class="menu-btn" id="settingsBtn">SETTINGS</button>
-  <button class="menu-btn" id="aboutBtn">ABOUT</button>
-</div>
-
-<!-- Pause Menu -->
-<div id="pauseMenu">
-  <button class="menu-btn" id="resumeBtn">RESUME</button>
-  <button class="menu-btn" id="quitBtn">QUIT TO MENU</button>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/PointerLockControls.js"></script>
+  <div id="app">
+    <nav aria-label="Main menu">
+      <button id="nav-play" class="active" tabindex="0">PLAY</button>
+      <button id="nav-online" tabindex="0">ONLINE</button>
+      <button id="nav-customize" tabindex="0">CUSTOMIZE</button>
+      <button id="nav-settings" tabindex="0">SETTINGS</button>
+      <button id="nav-exit" tabindex="0">EXIT</button>
+    </nav>
+    <main role="main" tabindex="0">
+      <!-- Content fills here dynamically -->
+    </main>
+  </div>
+  <button id="backButton" aria-label="Back to main menu">Back</button>
 
 <script>
-let scene, camera, renderer, controls;
-let enemies = [];
-let score = 0;
-let gameStarted = false;
+  const navButtons = {
+    play: document.getElementById('nav-play'),
+    online: document.getElementById('nav-online'),
+    customize: document.getElementById('nav-customize'),
+    settings: document.getElementById('nav-settings'),
+    exit: document.getElementById('nav-exit')
+  };
+  const mainContent = document.querySelector('main');
+  const backButton = document.getElementById('backButton');
 
-init();
-animate();
+  // Navigation state stack to handle submenu back
+  let navStack = [];
 
-function init() {
-  scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x202533);
-
-  camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-
-  renderer = new THREE.WebGLRenderer();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  document.body.appendChild(renderer.domElement);
-
-  controls = new THREE.PointerLockControls(camera, document.body);
-  scene.add(controls.getObject());
-
-  const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
-  scene.add(light);
-
-  const floorGeo = new THREE.PlaneGeometry(200, 200);
-  const floorMat = new THREE.MeshStandardMaterial({ color: 0x303030 });
-  const floor = new THREE.Mesh(floorGeo, floorMat);
-  floor.rotation.x = -Math.PI / 2;
-  scene.add(floor);
-
-  spawnEnemies(15);
-
-  // MENU BUTTONS
-  playBtn.onclick = () => startGame();
-  resumeBtn.onclick = () => controls.lock();
-  quitBtn.onclick = () => quitToMenu();
-
-  settingsBtn.onclick = () => alert("Settings coming soon 👀");
-  aboutBtn.onclick = () => alert("Mini FPS Shooter — GitHub Starter Project");
-
-  controls.addEventListener('lock', () => {
-    pauseMenu.style.display = 'none';
-  });
-
-  controls.addEventListener('unlock', () => {
-    if (gameStarted) pauseMenu.style.display = 'flex';
-  });
-
-  window.addEventListener('resize', onResize);
-  window.addEventListener('click', shoot);
-}
-
-function startGame() {
-  gameStarted = true;
-  menu.style.display = 'none';
-  hud.style.display = 'block';
-  crosshair.style.display = 'block';
-  controls.lock();
-}
-
-function quitToMenu() {
-  controls.unlock();
-  pauseMenu.style.display = 'none';
-  menu.style.display = 'flex';
-  hud.style.display = 'none';
-  crosshair.style.display = 'none';
-  gameStarted = false;
-}
-
-function spawnEnemies(n) {
-  const geo = new THREE.BoxGeometry(1,1,1);
-  const mat = new THREE.MeshStandardMaterial({ color: 0xff3333 });
-
-  for (let i=0;i<n;i++){
-    const m = new THREE.Mesh(geo, mat.clone());
-    m.position.set((Math.random()-0.5)*80, 0.5, (Math.random()-0.5)*80);
-    scene.add(m);
-    enemies.push(m);
+  // Clear active state from nav buttons
+  function clearActive() {
+    Object.values(navButtons).forEach(btn => btn.classList.remove('active'));
   }
-}
 
-function shoot() {
-  if (!controls.isLocked) return;
-
-  const dir = new THREE.Vector3();
-  camera.getWorldDirection(dir);
-
-  const ray = new THREE.Raycaster(camera.position, dir);
-  const hits = ray.intersectObjects(enemies);
-
-  if (hits.length > 0) {
-    const hit = hits[0].object;
-    scene.remove(hit);
-    enemies = enemies.filter(e => e !== hit);
-    score++;
-    scoreEl.textContent = score;
+  // Render content for each main nav
+  function renderMainMenu() {
+    backButton.style.display = 'none';
+    mainContent.innerHTML = `<h2>Welcome to Arena Strike</h2>
+      <p>Select an option from the left to get started.</p>`;
   }
-}
 
-function animate() {
-  requestAnimationFrame(animate);
+  // Play submenu
+  function renderPlayMenu() {
+    backButton.style.display = 'block';
+    mainContent.innerHTML = `
+      <h2>Play Modes</h2>
+      <div class="submenu-cards">
+        <div class="card" tabindex="0" data-mode="casual">
+          <h3>Casual</h3>
+          <p>Jump into a relaxed match with players of all skill levels.</p>
+        </div>
+        <div class="card" tabindex="0" data-mode="competitive">
+          <h3>Competitive</h3>
+          <p>Climb the ranks in intense, skill-based matches.</p>
+        </div>
+        <div class="card" tabindex="0" data-mode="tutorial">
+          <h3>Tutorial</h3>
+          <p>Learn the basics and practice your skills.</p>
+        </div>
+        <div class="card" tabindex="0" data-mode="custom">
+          <h3>Custom Match</h3>
+          <p>Create or join custom games with friends.</p>
+        </div>
+      </div>
+    `;
 
-  enemies.forEach(e => {
-    e.lookAt(camera.position);
-    e.position.x += (camera.position.x - e.position.x) * 0.002;
-    e.position.z += (camera.position.z - e.position.z) * 0.002;
+    // Attach click handlers to cards
+    mainContent.querySelectorAll('.card').forEach(card => {
+      card.addEventListener('click', () => {
+        const mode = card.dataset.mode;
+        navStack.push('play');
+        renderPlayModeDetail(mode);
+      });
+      card.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          card.click();
+        }
+      });
+    });
+  }
+
+  // Detailed submenu for play modes (e.g. matchmaking)
+  function renderPlayModeDetail(mode) {
+    backButton.style.display = 'block';
+
+    let title = '';
+    let desc = '';
+    let extra = '';
+
+    switch(mode) {
+      case 'casual':
+        title = 'Casual Matchmaking';
+        desc = 'Queue for casual matches with quick matchmaking and relaxed rules.';
+        extra = `<button id="findMatchBtn" style="
+          margin-top: 30px; padding: 14px 28px; font-size: 1.2rem; background:#4a90e2; color:#fff; border:none; border-radius: 8px; cursor:pointer;
+          ">Find Match</button>`;
+        break;
+      case 'competitive':
+        title = 'Competitive Matchmaking';
+        desc = 'Play ranked matches to climb the leaderboards and prove your skills.';
+        extra = `<button id="findMatchBtn" style="
+          margin-top: 30px; padding: 14px 28px; font-size: 1.2rem; background:#d94f4f; color:#fff; border:none; border-radius: 8px; cursor:pointer;
+          ">Find Competitive Match</button>`;
+        break;
+      case 'tutorial':
+        title = 'Tutorial Mode';
+        desc = 'Learn game mechanics with guided lessons and practice.';
+        extra = `<button id="startTutorialBtn" style="
+          margin-top: 30px; padding: 14px 28px; font-size: 1.2rem; background:#777; color:#fff; border:none; border-radius: 8px; cursor:pointer;
+          ">Start Tutorial</button>`;
+        break;
+      case 'custom':
+        title = 'Custom Matches';
+        desc = 'Create or join private matches with your friends.';
+        extra = `<button id="createLobbyBtn" style="
+          margin-top: 30px; padding: 14px 28px; font-size: 1.2rem; background:#6a6aff; color:#fff; border:none; border-radius: 8px; cursor:pointer;
+          ">Create Lobby</button>`;
+        break;
+    }
+
+    mainContent.innerHTML = `
+      <h2>${title}</h2>
+      <p>${desc}</p>
+      ${extra}
+    `;
+
+    // Add listeners for buttons here (currently just alerts)
+    if (mode === 'tutorial') {
+      document.getElementById('startTutorialBtn').onclick = () => alert('Tutorial starting soon!');
+    }
+    if (mode === 'casual' || mode === 'competitive') {
+      document.getElementById('findMatchBtn').onclick = () => alert(`Searching for a ${mode} match...`);
+    }
+    if (mode === 'custom') {
+      document.getElementById('createLobbyBtn').onclick = () => alert('Creating custom lobby...');
+    }
+  }
+
+  // Online submenu stub
+  function renderOnlineMenu() {
+    backButton.style.display = 'block';
+    mainContent.innerHTML = `
+      <h2>Online</h2>
+      <p>Matchmaking and lobby options coming soon.</p>
+    `;
+  }
+
+  // Customize submenu stub
+  function renderCustomizeMenu() {
+    backButton.style.display = 'block';
+    mainContent.innerHTML = `
+      <h2>Customize</h2>
+      <p>Character and loadout customization coming soon.</p>
+    `;
+  }
+
+  // Settings submenu stub
+  function renderSettingsMenu() {
+    backButton.style.display = 'block';
+    mainContent.innerHTML = `
+      <h2>Settings</h2>
+      <p>Audio, video, and controls settings coming soon.</p>
+    `;
+  }
+
+  // Exit stub
+  function exitGame() {
+    alert('Exiting game (not implemented)');
+  }
+
+  // Handle nav button clicks
+  function onNavClick(key) {
+    clearActive();
+    navButtons[key].classList.add('active');
+
+    switch(key) {
+      case 'play':
+        navStack = []; // Reset stack
+        renderPlayMenu();
+        break;
+      case 'online':
+        navStack = [];
+        renderOnlineMenu();
+        break;
+      case 'customize':
+        navStack = [];
+        renderCustomizeMenu();
+        break;
+      case 'settings':
+        navStack = [];
+        renderSettingsMenu();
+        break;
+      case 'exit':
+        exitGame();
+        break;
+    }
+  }
+
+  // Back button handler
+  backButton.onclick = () => {
+    if (navStack.length === 0) {
+      // Back to main menu
+      renderMainMenu();
+      clearActive();
+    } else {
+      const last = navStack.pop();
+      if (last === 'play') {
+        renderPlayMenu();
+      } else {
+        renderMainMenu();
+        clearActive();
+      }
+    }
+  };
+
+  // Keyboard ESC to back out
+  window.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      backButton.click();
+    }
   });
 
-  renderer.render(scene, camera);
-}
+  // Setup nav button event listeners
+  Object.entries(navButtons).forEach(([key, btn]) => {
+    btn.addEventListener('click', () => onNavClick(key));
+  });
 
-function onResize(){
-  camera.aspect = window.innerWidth/window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-}
-
-// DOM refs after load
-const scoreEl = document.getElementById('score');
+  // Initialize with welcome screen
+  renderMainMenu();
 </script>
 </body>
 </html>
