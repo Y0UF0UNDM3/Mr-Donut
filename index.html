@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Mini FPS Shooter</title>
+  <style>
+    body { margin: 0; overflow: hidden; background: black; font-family: sans-serif; }
+    #hud {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      color: white;
+      font-size: 18px;
+    }
+    #crosshair {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 24px;
+      pointer-events: none;
+    }
+    #start {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      background: rgba(0,0,0,0.8);
+      cursor: pointer;
+      font-size: 28px;
+    }
+  </style>
+</head>
+<body>
+<div id="hud">Score: <span id="score">0</span></div>
+<div id="crosshair">+</div>
+<div id="start">Click to Start</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/PointerLockControls.js"></script>
+
+<script>
+let scene, camera, renderer, controls;
+let enemies = [];
+let bullets = [];
+let score = 0;
+
+init();
+animate();
+
+function init() {
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x202533);
+
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+
+  renderer = new THREE.WebGLRenderer();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
+
+  controls = new THREE.PointerLockControls(camera, document.body);
+
+  document.getElementById('start').onclick = () => controls.lock();
+  controls.addEventListener('lock', () => start.style.display = 'none');
+  controls.addEventListener('unlock', () => start.style.display = 'flex');
+
+  scene.add(controls.getObject());
+
+  const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
+  scene.add(light);
+
+  const floorGeo = new THREE.PlaneGeometry(200, 200);
+  const floorMat = new THREE.MeshStandardMaterial({ color: 0x303030 });
+  const floor = new THREE.Mesh(floorGeo, floorMat);
+  floor.rotation.x = -Math.PI / 2;
+  scene.add(floor);
+
+  spawnEnemies(15);
+
+  window.addEventListener('resize', onResize);
+  window.addEventListener('click', shoot);
+}
+
+function spawnEnemies(n) {
+  const geo = new THREE.BoxGeometry(1,1,1);
+  const mat = new THREE.MeshStandardMaterial({ color: 0xff3333 });
+
+  for (let i=0;i<n;i++){
+    const m = new THREE.Mesh(geo, mat.clone());
+    m.position.set((Math.random()-0.5)*80, 0.5, (Math.random()-0.5)*80);
+    scene.add(m);
+    enemies.push(m);
+  }
+}
+
+function shoot() {
+  if (!controls.isLocked) return;
+
+  const dir = new THREE.Vector3();
+  camera.getWorldDirection(dir);
+
+  const ray = new THREE.Raycaster(camera.position, dir);
+  const hits = ray.intersectObjects(enemies);
+
+  if (hits.length > 0) {
+    const hit = hits[0].object;
+    scene.remove(hit);
+    enemies = enemies.filter(e => e !== hit);
+    score++;
+    document.getElementById('score').textContent = score;
+  }
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  enemies.forEach(e => {
+    e.lookAt(camera.position);
+    e.position.x += (camera.position.x - e.position.x) * 0.002;
+    e.position.z += (camera.position.z - e.position.z) * 0.002;
+  });
+
+  renderer.render(scene, camera);
+}
+
+function onResize(){
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+</script>
+</body>
+</html>
